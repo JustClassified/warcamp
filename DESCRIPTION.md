@@ -89,6 +89,8 @@ Finishing a real dungeon, Mythic+ or delve gives your camp a **Rallying Cry** bu
 - **Export** your camp as a text string at any time to keep it safe or move it to another computer, and **Import** it back.
 - Every import, restore and reset keeps a backup, so you can undo it from the options page.
 
+![Options](https://raw.githubusercontent.com/JustClassified/warcamp/main/imgs/options.jpg)
+
 ## Commands
 
 | Command | What it does |

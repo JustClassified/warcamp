@@ -233,7 +233,8 @@ local function BuildPanel()
 
     local backupText = Kit.Text(p, "GameFontHighlightSmall")
     backupText:SetPoint("TOPLEFT", export, "BOTTOMLEFT", 0, -12)
-    backupText:SetWidth(380)
+    backupText:SetWidth(560)
+    backupText:SetWordWrap(true)
 
     local restore = ConfirmButton(p, "Restore backup", 160, "Click again to restore", function()
         local ok, err = Kit.Do("RestoreBackup")
