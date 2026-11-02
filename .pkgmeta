@@ -10,3 +10,4 @@ ignore:
   - "*.DS_Store"
   - imgs
   - DESCRIPTION.md
+  - logo

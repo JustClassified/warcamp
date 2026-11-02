@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 400 400">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="70%">
+      <stop offset="0" stop-color="#5a1a12"/>
+      <stop offset="0.55" stop-color="#2a0c09"/>
+      <stop offset="1" stop-color="#0d0605"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff0b0"/>
+      <stop offset="0.45" stop-color="#e0b050"/>
+      <stop offset="1" stop-color="#8a5a18"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e8e8ee"/>
+      <stop offset="0.5" stop-color="#9aa0aa"/>
+      <stop offset="1" stop-color="#4a4e56"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8e2418"/>
+      <stop offset="1" stop-color="#3e0c08"/>
+    </linearGradient>
+    <linearGradient id="tent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f3d68a"/>
+      <stop offset="1" stop-color="#b98a3a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffb040" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffb040" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="400" height="400" fill="url(#bg)"/>
+  <rect x="10" y="10" width="380" height="380" rx="36" fill="none" stroke="url(#gold)" stroke-width="6"/>
+  <rect x="20" y="20" width="360" height="360" rx="28" fill="none" stroke="#e0b050" stroke-opacity="0.35" stroke-width="2"/>
+
+  <circle cx="200" cy="170" r="150" fill="url(#glow)"/>
+
+  <!-- crossed axes behind the shield -->
+  <g stroke-linecap="round">
+    <g transform="rotate(-38 200 175)">
+      <rect x="194" y="34" width="12" height="262" rx="5" fill="#5b3a1e" stroke="#2a1608" stroke-width="2"/>
+      <rect x="191" y="282" width="18" height="14" rx="3" fill="#e0b050" stroke="#4a2a0c" stroke-width="2"/>
+      <path d="M194 64 L174 70 Q140 56 132 46 Q112 92 132 140 Q140 128 174 118 L194 122 Z" fill="url(#steel)" stroke="#1e2026" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M139 56 Q122 94 137 132" fill="none" stroke="#ffffff" stroke-opacity="0.7" stroke-width="3"/>
+      <rect x="190" y="60" width="20" height="66" rx="4" fill="#e0b050" stroke="#4a2a0c" stroke-width="2"/>
+    </g>
+    <g transform="translate(400 0) scale(-1 1) rotate(-38 200 175)">
+      <rect x="194" y="34" width="12" height="262" rx="5" fill="#5b3a1e" stroke="#2a1608" stroke-width="2"/>
+      <rect x="191" y="282" width="18" height="14" rx="3" fill="#e0b050" stroke="#4a2a0c" stroke-width="2"/>
+      <path d="M194 64 L174 70 Q140 56 132 46 Q112 92 132 140 Q140 128 174 118 L194 122 Z" fill="url(#steel)" stroke="#1e2026" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M139 56 Q122 94 137 132" fill="none" stroke="#ffffff" stroke-opacity="0.7" stroke-width="3"/>
+      <rect x="190" y="60" width="20" height="66" rx="4" fill="#e0b050" stroke="#4a2a0c" stroke-width="2"/>
+    </g>
+  </g>
+
+  <!-- shield -->
+  <path d="M200 80 L292 106 C292 190 262 236 200 268 C138 236 108 190 108 106 Z" fill="url(#gold)"/>
+  <path d="M200 92 L280 114 C280 186 254 226 200 254 C146 226 120 186 120 114 Z" fill="url(#shield)"/>
+
+  <!-- camp: tent with banner and fire -->
+  <path d="M200 132 L250 214 L150 214 Z" fill="url(#tent)" stroke="#4a2a0c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M200 160 L218 214 L182 214 Z" fill="#3a1608"/>
+  <line x1="200" y1="132" x2="200" y2="104" stroke="#2a1608" stroke-width="4" stroke-linecap="round"/>
+  <path d="M200 104 L228 110 L216 116 L228 122 L200 122 Z" fill="#e0b050" stroke="#4a2a0c" stroke-width="2"/>
+  <path d="M146 214 L254 214" stroke="#e0b050" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- title -->
+  <g font-family="Georgia, 'Times New Roman', serif" font-weight="bold" text-anchor="middle">
+    <text x="200" y="338" font-size="50" letter-spacing="2" fill="#120605" opacity="0.8" transform="translate(3 4)">WARCAMP</text>
+    <text x="200" y="338" font-size="50" letter-spacing="2" fill="url(#gold)" stroke="#3a2008" stroke-width="1.5">WARCAMP</text>
+  </g>
+  <path d="M96 356 L304 356" stroke="#e0b050" stroke-opacity="0.6" stroke-width="2"/>
+  <path d="M188 356 L200 364 L212 356" fill="#e0b050" opacity="0.8"/>
+</svg>
