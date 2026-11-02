@@ -658,7 +658,9 @@ step("bags tab: grid, select, use, sell, gear", function()
     local gearIds = {}
     for _, g in ipairs(Game:GetGearBag() or {}) do gearIds[#gearIds + 1] = g.id end
     for _, id in ipairs(gearIds) do
-        P.sel, P.selGear = nil, id; flush()
+        P.sel, P.selGear = nil, id; UI.Refresh(); flush()
+        assert(R.equip:IsShown() and not R.sell1:IsShown() and not R.market:IsShown() and not R.usedHeader:IsShown(),
+            "gear shows only gear buttons")
         if R.equip:IsEnabled() then R.equip:Fire("OnClick", "LeftButton") else
             R.sellGear:Fire("OnClick", "LeftButton"); R.sellGear:Fire("OnClick", "LeftButton") end
         flush()

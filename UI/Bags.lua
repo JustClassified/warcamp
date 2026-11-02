@@ -356,12 +356,13 @@ local function RefreshDetail()
     local R = P.detail
     local g = P.selGear and P.gearById and P.gearById[P.selGear]
     if P.selGear and not g then P.selGear = nil end
-    local it = not g and P.sel and Kit.Item(P.sel)
+    local it = (not g and P.sel) and Kit.Item(P.sel) or nil
     local have = P.sel and (Kit.Call("Count", P.sel) or 0) or 0
-    local show = it ~= nil or g ~= nil
+    local isGear, isItem = g ~= nil, it ~= nil
+    local show = isGear or isItem
     for _, w in ipairs({ R.item, R.name, R.sub, R.stats }) do w:SetShown(show) end
-    for _, k in ipairs(GEAR_WIDGETS) do R[k]:SetShown(g ~= nil) end
-    for _, k in ipairs(ITEM_WIDGETS) do R[k]:SetShown(it ~= nil) end
+    for _, k in ipairs(GEAR_WIDGETS) do R[k]:SetShown(isGear) end
+    for _, k in ipairs(ITEM_WIDGETS) do R[k]:SetShown(isItem) end
     R.empty:SetShown(not show)
     if not show then
         R.header:SetText("Item")
@@ -392,14 +393,18 @@ local function RefreshDetail()
 
     R.use:SetShown(buff ~= nil)
     R.use:SetEnabledTip(have > 0, "You have none.")
+    -- one anchor per button, rebuilt every time (stacking SetPoint calls made them overlap)
+    R.sell1:ClearAllPoints()
     if buff then
         R.sell1:SetPoint("LEFT", R.use, "RIGHT", 4, 0)
     else
-        R.sell1:ClearAllPoints()
         R.sell1:SetPoint("TOPLEFT", R.stats, "BOTTOMLEFT", 0, -10)
     end
+    R.sell10:ClearAllPoints()
     R.sell10:SetPoint("LEFT", R.sell1, "RIGHT", 4, 0)
+    R.sellAll:ClearAllPoints()
     R.sellAll:SetPoint("LEFT", R.sell10, "RIGHT", 4, 0)
+    R.market:ClearAllPoints()
     R.market:SetPoint("LEFT", R.sellAll, "RIGHT", 4, 0)
     R.sell1:SetEnabledTip(have >= 1, "You have none.")
     R.sell10:SetEnabledTip(have >= 10, "You have fewer than 10.")
