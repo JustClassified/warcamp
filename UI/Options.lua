@@ -108,7 +108,7 @@ local function BuildDialog()
     f.Close2 = Kit.Button(f, CLOSE or "Close", 90, 22, function() f:Hide() end)
     f.Close2:SetPoint("BOTTOMRIGHT", -12, 10)
 
-    f.Action = ConfirmButton(f, "Import", 170, "Click again to replace camp", function()
+    f.Action = ConfirmButton(f, "Import", 170, "Click again to import", function()
         local text = edit:GetText()
         local okDo, err = Kit.Do("ImportString", text)
         if okDo then
@@ -236,7 +236,7 @@ local function BuildPanel()
     backupText:SetWidth(560)
     backupText:SetWordWrap(true)
 
-    local restore = ConfirmButton(p, "Restore backup", 160, "Click again to restore", function()
+    local restore = ConfirmButton(p, "Restore backup", 160, "Click to confirm", function()
         local ok, err = Kit.Do("RestoreBackup")
         if ok then ns.Say("backup restored. The camp it replaced is now the backup.") end
         p:Refresh()
@@ -244,7 +244,7 @@ local function BuildPanel()
     end)
     restore:SetPoint("TOPLEFT", backupText, "BOTTOMLEFT", 0, -6)
 
-    local reset = ConfirmButton(p, "Reset camp", 160, "Click again to reset", function()
+    local reset = ConfirmButton(p, "Reset camp", 160, "Click to confirm", function()
         Kit.Do("ResetAll")
         ns.Say("your camp has been reset. The old one is kept as a backup.")
         p:Refresh()

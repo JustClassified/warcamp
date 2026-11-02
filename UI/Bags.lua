@@ -29,7 +29,19 @@ local SLOT_NAME = {
     FEET = "Feet", WEAPON = "Weapon", TRINKET = "Trinket",
 }
 
-local P = {}
+local P = { filter = "ALL", sort = 1, search = "" }
+
+-- filter bar: which kinds each button shows (gear is its own group)
+local FILTERS = {
+    { key = "ALL", name = "All" },
+    { key = "GEAR", name = "Gear" },
+    { key = "MATS", name = "Materials", kinds = { ORE = true, HERB = true, LEATHER = true, FISH = true, CLOTH = true, BAR = true } },
+    { key = "USE", name = "Consumables", kinds = { POTION = true, FOOD = true } },
+    { key = "RARE", name = "Rare", kinds = { RARE = true, MISC = true } },
+}
+local FILTER_BY_KEY = {}
+for _, f in ipairs(FILTERS) do FILTER_BY_KEY[f.key] = f end
+local SORTS = { "Type", "Value", "Name", "Amount" }
 
 ------------------------------------------------------------------------
 -- helpers
@@ -105,32 +117,52 @@ end
 local KIND_ORDER = {}
 for i, k in ipairs(KINDS) do KIND_ORDER[k.key] = i end
 
+local function Matches(name, kind)
+    if P.search == "" then return true end
+    local hay = string.lower((name or "") .. " " .. (KIND_NAME[kind or ""] or "") .. " " .. (SLOT_NAME[kind or ""] or ""))
+    return hay:find(P.search, 1, true) ~= nil
+end
+
+-- every slot gets the same sort fields: group (gear first), kind order, tier, value, name, amount
+local function SortSlots(list)
+    local mode = SORTS[P.sort] or "Type"
+    table.sort(list, function(a, b)
+        if mode == "Value" and a.value ~= b.value then return a.value > b.value end
+        if mode == "Name" and a.name ~= b.name then return a.name < b.name end
+        if mode == "Amount" and a.amount ~= b.amount then return a.amount > b.amount end
+        if a.group ~= b.group then return a.group < b.group end
+        if a.order ~= b.order then return a.order < b.order end
+        if a.tier ~= b.tier then return a.tier > b.tier end
+        if a.quality ~= b.quality then return a.quality > b.quality end
+        if a.name ~= b.name then return a.name < b.name end
+        return a.id < b.id
+    end)
+end
+
 local function BuildSlots()
-    local slots, total, worth = {}, 0, 0
-    local gear = Kit.Call("GetGearBag") or {}
-    table.sort(gear, function(a, b)
-        if (a.quality or 1) ~= (b.quality or 1) then return (a.quality or 1) > (b.quality or 1) end
-        if (a.ilvl or 0) ~= (b.ilvl or 0) then return (a.ilvl or 0) > (b.ilvl or 0) end
-        return (a.id or 0) < (b.id or 0)
-    end)
-    for _, g in ipairs(gear) do
-        slots[#slots + 1] = { gear = g }
-        worth = worth + (Kit.Call("GearValue", g) or 0)
+    local f = FILTER_BY_KEY[P.filter] or FILTERS[1]
+    local slots, total, worth, nGear, shown = {}, 0, 0, 0, 0
+    for _, g in ipairs(Kit.Call("GetGearBag") or {}) do
+        local value = Kit.Call("GearValue", g) or 0
+        worth = worth + value
+        nGear = nGear + 1
+        if (f.key == "ALL" or f.key == "GEAR") and Matches(g.name, g.slot) then
+            slots[#slots + 1] = { gear = g, group = 0, order = 0, tier = g.tier or 0, quality = g.quality or 1,
+                value = value, name = g.name or "", amount = 1, id = tostring(g.id or 0) }
+        end
     end
-    local items = Kit.Call("GetInventory") or {}
-    table.sort(items, function(a, b)
-        local ka = KIND_ORDER[a.item.kind or ""] or 99
-        local kb = KIND_ORDER[b.item.kind or ""] or 99
-        if ka ~= kb then return ka < kb end
-        if (a.item.tier or 0) ~= (b.item.tier or 0) then return (a.item.tier or 0) > (b.item.tier or 0) end
-        return (a.item.name or a.key) < (b.item.name or b.key)
-    end)
-    for _, e in ipairs(items) do
-        slots[#slots + 1] = { entry = e }
+    for _, e in ipairs(Kit.Call("GetInventory") or {}) do
+        local kind = e.item.kind or "MISC"
+        local value = SellPrice(e.key) * e.count
         total = total + e.count
-        worth = worth + SellPrice(e.key) * e.count
+        worth = worth + value
+        if (f.key == "ALL" or (f.kinds and f.kinds[kind])) and Matches(e.item.name or e.key, kind) then
+            slots[#slots + 1] = { entry = e, group = 1, order = KIND_ORDER[kind] or 99, tier = e.item.tier or 0,
+                quality = e.item.quality or 1, value = value, name = e.item.name or e.key, amount = e.count, id = e.key }
+        end
     end
-    return slots, total, worth, #gear
+    SortSlots(slots)
+    return slots, total, worth, nGear
 end
 
 local function ToRows(slots)
@@ -246,7 +278,7 @@ local function BuildDetail(panel)
     R.market = Kit.Button(R, "Market", 66, 22, function() UI.Show("MARKET") end, "Open the Market for the price chart and buying.")
 
     -- gear mode
-    R.equip = Kit.Button(R, "Equip", 120, 22, function()
+    R.equip = Kit.Button(R, "Equip", 80, 22, function()
         local g = P.selGear and P.gearById and P.gearById[P.selGear]
         local best = g and BestUpgrade(g)
         if best then Kit.Do("Equip", best.id, g.id) end
@@ -309,13 +341,13 @@ local function RefreshGear(R, g)
         string.format("|cffffd100Sells for|r  %s", Kit.Coin(value)),
     }
     if best then
-        lines[#lines + 1] = string.format("|cffffd100Best upgrade|r  %s  |cff40ff40+%d item level|r", Kit.HeroName(best), gain)
+        lines[#lines + 1] = string.format("|cffffd100Best upgrade|r  %s  |cff40ff40+%d item level|r  (Equip puts it on them)", Kit.HeroName(best), gain)
     else
         lines[#lines + 1] = "|cff9d9d9dEvery recruit already wears something as good in this slot.|r"
     end
     R.stats:SetText(table.concat(lines, "\n"))
-    R.equip:SetText(best and ("Equip on " .. (best.name or "?")) or "Equip")
-    R.equip:SetWidth(best and math.min(170, 70 + #(best.name or "") * 6) or 70)
+    -- the hero is named in the line above; button text is never clipped, so it stays short
+    R.equip:SetText("Equip")
     R.equip:SetEnabledTip(best ~= nil, "No recruit would be better off with it.")
     if P.confirmGear ~= g.id or time() > (R.sellGear.confirmUntil or 0) then R.sellGear:SetText("Sell") end
 end
@@ -397,8 +429,44 @@ end
 local function Build(panel)
     P.gridHeader = Kit.Header(panel, "Bags", LEFT_W)
     P.gridHeader:SetPoint("TOPLEFT", 0, 0)
+    -- filter bar: kind buttons, sort, search
+    P.filterButtons = {}
+    local prev
+    for _, f in ipairs(FILTERS) do
+        local b = Kit.Button(panel, f.name, f.key == "USE" and 92 or (f.key == "MATS" and 78 or 52), 20, function()
+            P.filter = f.key
+            UI.Refresh()
+        end)
+        if prev then b:SetPoint("LEFT", prev, "RIGHT", 2, 0) else b:SetPoint("TOPLEFT", 4, -22) end
+        b.key = f.key
+        P.filterButtons[#P.filterButtons + 1] = b
+        prev = b
+    end
+    P.sortButton = Kit.Button(panel, "Sort: Type", 100, 20, function()
+        P.sort = P.sort % #SORTS + 1
+        UI.Refresh()
+    end, "Click to sort by type, value, name or amount.")
+    P.sortButton:SetPoint("LEFT", prev, "RIGHT", 8, 0)
+
+    local ok, box = pcall(CreateFrame, "EditBox", nil, panel, "SearchBoxTemplate")
+    if not ok then box = CreateFrame("EditBox", nil, panel, "InputBoxTemplate") end
+    box:SetSize(120, 20)
+    box:SetPoint("LEFT", P.sortButton, "RIGHT", 10, 0)
+    box:SetPoint("RIGHT", panel, "LEFT", LEFT_W - 4, 0)
+    box:SetAutoFocus(false)
+    box:HookScript("OnTextChanged", function(self)
+        local t = string.lower(strtrim and strtrim(self:GetText() or "") or (self:GetText() or ""))
+        if t ~= P.search then
+            P.search = t
+            UI.Refresh()
+        end
+    end)
+    box:SetScript("OnEscapePressed", function(self) self:SetText("") self:ClearFocus() end)
+    box:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
+    P.searchBox = box
+
     P.grid = Kit.List(panel, { rowHeight = SLOT + GAP, build = BuildGridRow, update = UpdateGridRow, stripes = false })
-    P.grid:SetPoint("TOPLEFT", 0, -24)
+    P.grid:SetPoint("TOPLEFT", 0, -46)
     P.grid:SetPoint("BOTTOM", panel, "BOTTOM", 0, 0)
     P.grid:SetWidth(LEFT_W)
     BuildDetail(panel)
@@ -406,11 +474,17 @@ end
 
 local function Refresh()
     if not P.grid then return end
+    for _, b in ipairs(P.filterButtons) do
+        if b.key == P.filter then b:LockHighlight() else b:UnlockHighlight() end
+    end
+    P.sortButton:SetText("Sort: " .. SORTS[P.sort])
     local slots, total, worth, nGear = BuildSlots()
     P.gearById = {}
     for _, s in ipairs(slots) do if s.gear then P.gearById[s.gear.id] = s.gear end end
     P.grid:SetData(ToRows(slots))
-    P.gridHeader.right:SetText(string.format("%d items, %d gear  |cff9d9d9dworth|r %s", total, nGear, Kit.Coin(worth, true)))
+    local filtered = P.filter ~= "ALL" or P.search ~= ""
+    P.gridHeader.right:SetText(string.format("%s%d items, %d gear  |cff9d9d9dworth|r %s",
+        filtered and string.format("|cffffd100%d shown|r  -  ", #slots) or "", total, nGear, Kit.Coin(worth, true)))
     if P.sel and (Kit.Call("Count", P.sel) or 0) == 0 then P.sel = nil end
     RefreshDetail()
 end

@@ -667,6 +667,24 @@ step("bags tab: grid, select, use, sell, gear", function()
         assert(not (Game.db.bag or {})[id], "gear slot equipped or sold")
     end
     print(string.format("     bags: %d gear slots handled", #gearIds))
+    -- filters, sort, search
+    local function shown()
+        local n = 0
+        P.grid:ForEachRow(function(row) for _, b in ipairs(row.Slots) do if b.spec then n = n + 1 end end end)
+        return n
+    end
+    Game:AddItem("HERB_T1", 5); Game:AddItem("HEALING_POTION", 1); flush()
+    local all = shown()
+    for _, b in ipairs(P.filterButtons) do b:Fire("OnClick", "LeftButton"); flush() end
+    P.filter = "USE"; UI.Refresh(); flush()
+    assert(shown() >= 1 and shown() < all, "consumables filter narrows the bag")
+    P.filter = "ALL"
+    for _ = 1, 4 do P.sortButton:Fire("OnClick", "LeftButton"); flush() end
+    assert(P.sort == 1, "sort cycles back to Type")
+    P.search = "zzznothing"; UI.Refresh(); flush()
+    assert(shown() == 0, "search with no match empties the bag")
+    P.search = ""; UI.Refresh(); flush()
+    assert(shown() == all, "clearing search shows everything")
     local empties = 0
     P.grid:ForEachRow(function(row) for _, b in ipairs(row.Slots) do if not b.spec then empties = empties + 1 end end end)
     assert(empties > 0, "bag padded with empty slots")
