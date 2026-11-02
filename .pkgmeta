@@ -1,0 +1,10 @@
+package-as: Warcamp
+
+ignore:
+  - Tests
+  - DESIGN.md
+  - README.md
+  - CHANGELOG.md
+  - .gitignore
+  - .pkgmeta
+  - "*.DS_Store"

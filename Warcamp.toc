@@ -1,0 +1,41 @@
+## Interface: 120105, 120100
+## Title: Warcamp
+## Notes: An idle game inside WoW: recruit heroes, send them gathering, questing, into dungeons and raids, craft, trade and collect mounts and pets while you wait for a queue.
+## Author: Laszlo Romsics
+## Version: 1.0.0
+## X-License: All Rights Reserved
+## SavedVariables: WarcampDB
+## IconTexture: Interface\Icons\inv_misc_tournaments_banner_orc
+## AddonCompartmentFunc: Warcamp_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: Warcamp_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: Warcamp_OnAddonCompartmentLeave
+
+Core\Init.lua
+Core\Serialize.lua
+Data\Classes.lua
+Data\Names.lua
+Data\Items.lua
+Data\World.lua
+Data\Instances.lua
+Data\Camp.lua
+Data\Collection.lua
+Engine\State.lua
+Engine\Heroes.lua
+Engine\Board.lua
+Engine\Tasks.lua
+Engine\Economy.lua
+Engine\Progress.lua
+Engine\Save.lua
+UI\Kit.lua
+UI\Frame.lua
+UI\Camp.lua
+UI\Bags.lua
+UI\Heroes.lua
+UI\Missions.lua
+UI\Dungeons.lua
+UI\Crafting.lua
+UI\Market.lua
+UI\Collection.lua
+UI\Minimap.lua
+UI\Options.lua
+Main.lua
