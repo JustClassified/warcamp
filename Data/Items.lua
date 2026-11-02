@@ -157,7 +157,7 @@ D.GEAR_SLOTS = { "HEAD", "SHOULDER", "CHEST", "HANDS", "LEGS", "FEET", "WEAPON",
 -- Real drops from each tier's dungeons and raid (JournalEncounterItem), used for icon + name.
 D.GEAR_BASES = {
     [1] = {
-        HEAD = { { itemID = 18870, name = "Helm of the Lifegiver" }, { itemID = 144026, name = "Helm of Rising Flame" }, { itemID = 224740, name = "Forgemasters's Faceshield" } },
+        HEAD = { { itemID = 18870, name = "Helm of the Lifegiver" }, { itemID = 144026, name = "Helm of Rising Flame" }, { itemID = 224740, name = "Forgemaster's Faceshield" } },
         SHOULDER = { { itemID = 144001, name = "Forgotten Bloodmage Mantle" }, { itemID = 13538, name = "Windshrieker Pauldrons" }, { itemID = 13533, name = "Acid-Etched Pauldrons" } },
         CHEST = { { itemID = 10399, name = "Blackened Defias Armor" }, { itemID = 13535, name = "Coldtouch Phantom Wraps" }, { itemID = 143965, name = "Korloff's Raiment" } },
         HANDS = { { itemID = 13539, name = "Banshee's Touch" }, { itemID = 16863, name = "Gauntlets of Might" }, { itemID = 18730, name = "Shadowy Laced Handwraps" } },

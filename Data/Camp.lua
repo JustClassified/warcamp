@@ -46,7 +46,7 @@ local function makeLevels(maxLevel, scale, kinds, effect)
 end
 
 D.BUILDINGS = {
-    TOWN_HALL = { name = "Town Hall", icon = I .. "INV_Misc_Flag_01", maxLevel = 12, stat = "MAX_BUILDING_LEVEL",
+    TOWN_HALL = { name = "Town Hall", icon = I .. "INV_BannerPVP_01", maxLevel = 12, stat = "MAX_BUILDING_LEVEL",
         desc = "The heart of the warcamp. Every other building may rise only as high as the Town Hall, and each level opens the road to a new age of Azeroth.",
         levels = makeLevels(12, 1.5, { "BAR", "CLOTH" }, function(n)
             return string.format("Buildings up to level %d; %s missions open", n, D.TIERS[n].name), n

@@ -8,3 +8,4 @@ ignore:
   - .gitignore
   - .pkgmeta
   - "*.DS_Store"
+  - imgs
