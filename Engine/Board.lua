@@ -193,6 +193,18 @@ local function genBoard(self, kind, zone, now)
     return board
 end
 
+-- a started quest leaves the board and a new one takes its place at once, so a zone never runs dry
+function Game:ReplaceQuest(o)
+    local zone = o and o.zone and self:ZoneByKey(o.zone)
+    local b = zone and self.db.boards["QUEST:" .. zone.key]
+    if not b then return end
+    for i, x in ipairs(b.offers) do
+        if x.key == o.key then table.remove(b.offers, i) break end
+    end
+    b.next = math.max(b.next or 0, QUESTS_PER_ZONE) + 1
+    b.offers[#b.offers + 1] = self:MakeQuestOffer(zone, b.next, b.window or 0)
+end
+
 function Game:ZoneBoard(kind, zoneKey, now)
     now = now or self:Now()
     local zone = self:ZoneByKey(zoneKey)

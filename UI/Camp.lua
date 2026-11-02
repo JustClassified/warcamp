@@ -137,7 +137,7 @@ local function TaskTooltip(tt, row, t)
     else
         tt:AddDoubleLine("Done at " .. U.Clock(t.endAt), "in " .. U.Duration(t.endAt - now), 1, 1, 1, 0.6, 0.8, 1)
     end
-    if t.repeatIt then tt:AddLine("Repeats when collected (also while you are away, up to 12 h)", 0.55, 0.8, 1, true) end
+    if t.repeatIt then tt:AddLine("Repeats when collected (also while you are away, up to 24 h)", 0.55, 0.8, 1, true) end
 end
 
 ------------------------------------------------------------------------
@@ -200,9 +200,7 @@ local function BuildTile(parent)
     local bg = f:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints()
     bg:SetColorTexture(0, 0, 0, 0.35)
-    local hl = f:CreateTexture(nil, "HIGHLIGHT")
-    hl:SetAllPoints()
-    if not Kit.Atlas(hl, "auctionhouse-ui-row-highlight") then hl:SetColorTexture(1, 1, 1, 0.06) end
+    Kit.RowHighlight(f)
     f:EnableMouse(true)
     Kit.SetTooltip(f, BuildingTooltip)
 

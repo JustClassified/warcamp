@@ -472,6 +472,20 @@ end
 
 local ListMixin = {}
 
+-- hover glow for a row or tile. The atlas is opaque under normal blending and the HIGHLIGHT layer
+-- draws above all text, so it must be additive: it can only brighten, never cover.
+function Kit.RowHighlight(frame, alpha)
+    local hl = frame:CreateTexture(nil, "HIGHLIGHT")
+    hl:SetAllPoints()
+    if Kit.Atlas(hl, "auctionhouse-ui-row-highlight") then
+        hl:SetBlendMode("ADD")
+        hl:SetAlpha(alpha or 0.45)
+    else
+        hl:SetColorTexture(1, 1, 1, 0.08)
+    end
+    return hl
+end
+
 local function RowClick(row, button)
     local L = row.wcList
     if not L then return end
@@ -503,9 +517,7 @@ function ListMixin:_InitRow(row, data)
         row.Select:SetAllPoints()
         if not Kit.Atlas(row.Select, "auctionhouse-ui-row-select") then row.Select:SetColorTexture(1, 0.82, 0, 0.18) end
         row.Select:Hide()
-        local hl = row:CreateTexture(nil, "HIGHLIGHT")
-        hl:SetAllPoints()
-        if not Kit.Atlas(hl, "auctionhouse-ui-row-highlight") then hl:SetColorTexture(1, 1, 1, 0.08) end
+        Kit.RowHighlight(row)
         row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
         row:SetScript("OnClick", RowClick)
         row:SetScript("OnEnter", RowEnter)

@@ -145,7 +145,7 @@ directly (read only) and changes anything only through these functions. Every mu
 ```lua
 Game:Init()                 -- after ADDON_LOADED: create/migrate WarcampDB, seed first recruits (3, quality 2)
 Game:Update(now?)           -- idempotent catch-up to now: finish buildings, passive production (Mine/Garden,
-                            -- capped by storage), repeat-loops of repeating tasks (capped at 12 h offline),
+                            -- capped by storage), repeat-loops of repeating tasks (capped at 24 h offline),
                             -- expire buffs/offers, refresh inn/board. Cheap when nothing is due.
 Game:Welcome()              -- report table of what happened while away (since last session); nil if < 5 min
 
@@ -216,7 +216,7 @@ Game:EraInfo()              -- {era, legacy, canAdvance, reason, bonus}   Game:A
   collection + achievements, gain Legacy → permanent % bonuses, each era 15–20% faster.
 - Success chance: party power vs offer ilvl/level, + countered threats, + correct roles. A fail still gives
   some XP and a little gold; never loses heroes. Chance shown to the player before Start.
-- Offline repeat cap 12 h — the reason to check in twice a day.
+- Offline repeat cap 24 h — check in once a day.
 - Mounts/pets are rare (0.5–3 %) and are the long-term chase; the Collection tab shows all the chase.
 
 ## UI contract (ns.UI)

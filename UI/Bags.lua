@@ -1,7 +1,7 @@
 -- Warcamp: the Bags tab - everything the camp owns in one place.
--- Left top: bag slots grouped by kind (ore, herbs, ... potions, food). Left bottom: spare gear with
--- the hero it would upgrade most, Equip and Sell. Right: the selected item - value, what it is used
--- for, where it comes from, Use / Sell.
+-- Left: one bag of slots like the game's own bags - spare gear first, then materials and consumables
+-- (sorted by kind, newest tier first), padded with empty slots. Right: the selected slot - value,
+-- what it is used for, where it comes from; Use / Sell, or for gear Equip on the best recruit / Sell.
 
 local ADDON, ns = ...
 local UI = ns.UI
@@ -9,10 +9,10 @@ local Kit = UI.Kit
 local D = ns.D
 
 local LEFT_W = 580
-local SLOT, GAP = 34, 4
-local PER_ROW = math.floor((LEFT_W - 16) / (SLOT + GAP))
-local GRID_H = 290
-local ROW_H = 20
+local SLOT, GAP = 37, 3
+local PER_ROW = math.floor((LEFT_W - 22) / (SLOT + GAP))
+local MIN_ROWS = 13                     -- empty slots fill the bag to at least this many rows
+local EMPTY_SLOT = "Interface\\PaperDoll\\UI-Backpack-EmptySlot"
 
 local KINDS = {
     { key = "ORE", name = "Ore" }, { key = "HERB", name = "Herbs" }, { key = "LEATHER", name = "Leather" },
@@ -101,61 +101,69 @@ end
 -- data
 ------------------------------------------------------------------------
 
--- grid rows: { head=kindKey, count=, kinds= } or { items={entry, ...} }
-local function BuildGrid()
-    local byKind, total, worth = {}, 0, 0
-    for _, e in ipairs(Kit.Call("GetInventory") or {}) do
-        local kind = KIND_NAME[e.item.kind or ""] and e.item.kind or "MISC"
-        byKind[kind] = byKind[kind] or {}
-        table.insert(byKind[kind], e)
+-- one flat list of slots: { gear = g } for spare gear, { entry = e } for a stack
+local KIND_ORDER = {}
+for i, k in ipairs(KINDS) do KIND_ORDER[k.key] = i end
+
+local function BuildSlots()
+    local slots, total, worth = {}, 0, 0
+    local gear = Kit.Call("GetGearBag") or {}
+    table.sort(gear, function(a, b)
+        if (a.quality or 1) ~= (b.quality or 1) then return (a.quality or 1) > (b.quality or 1) end
+        if (a.ilvl or 0) ~= (b.ilvl or 0) then return (a.ilvl or 0) > (b.ilvl or 0) end
+        return (a.id or 0) < (b.id or 0)
+    end)
+    for _, g in ipairs(gear) do
+        slots[#slots + 1] = { gear = g }
+        worth = worth + (Kit.Call("GearValue", g) or 0)
+    end
+    local items = Kit.Call("GetInventory") or {}
+    table.sort(items, function(a, b)
+        local ka = KIND_ORDER[a.item.kind or ""] or 99
+        local kb = KIND_ORDER[b.item.kind or ""] or 99
+        if ka ~= kb then return ka < kb end
+        if (a.item.tier or 0) ~= (b.item.tier or 0) then return (a.item.tier or 0) > (b.item.tier or 0) end
+        return (a.item.name or a.key) < (b.item.name or b.key)
+    end)
+    for _, e in ipairs(items) do
+        slots[#slots + 1] = { entry = e }
         total = total + e.count
         worth = worth + SellPrice(e.key) * e.count
     end
+    return slots, total, worth, #gear
+end
+
+local function ToRows(slots)
     local rows = {}
-    for _, k in ipairs(KINDS) do
-        local list = byKind[k.key]
-        if list then
-            table.sort(list, function(a, b)
-                if (a.item.tier or 0) ~= (b.item.tier or 0) then return (a.item.tier or 0) > (b.item.tier or 0) end
-                return (a.item.name or a.key) < (b.item.name or b.key)
-            end)
-            local n = 0
-            for _, e in ipairs(list) do n = n + e.count end
-            rows[#rows + 1] = { head = k.key, count = n, kinds = #list }
-            for i = 1, #list, PER_ROW do
-                local r = { items = {} }
-                for j = i, math.min(i + PER_ROW - 1, #list) do r.items[#r.items + 1] = list[j] end
-                rows[#rows + 1] = r
-            end
-        end
+    local n = math.max(#slots, MIN_ROWS * PER_ROW)
+    n = math.ceil(n / PER_ROW) * PER_ROW
+    for i = 1, n, PER_ROW do
+        local r = { first = i }
+        for j = 0, PER_ROW - 1 do r[j + 1] = slots[i + j] or false end
+        rows[#rows + 1] = r
     end
-    return rows, total, worth
+    return rows
 end
 
 ------------------------------------------------------------------------
 -- grid (left top)
 ------------------------------------------------------------------------
 
-local function Select(key)
-    P.sel = key
-    P.confirmAll = nil
+local function Select(key, gearId)
+    P.sel, P.selGear = key, gearId
+    P.confirmAll, P.confirmGear = nil, nil
     UI.Refresh()
 end
 
 local function BuildGridRow(row)
-    row.Head = Kit.Text(row, "GameFontNormal")
-    row.Head:SetPoint("BOTTOMLEFT", 4, 3)
-    row.HeadRight = Kit.Text(row, "GameFontDisableSmall", "RIGHT")
-    row.HeadRight:SetPoint("BOTTOMRIGHT", -6, 4)
-    row.Line = row:CreateTexture(nil, "ARTWORK")
-    row.Line:SetPoint("BOTTOMLEFT", 0, 0)
-    row.Line:SetPoint("BOTTOMRIGHT", 0, 0)
-    row.Line:SetHeight(1)
-    row.Line:SetColorTexture(1, 0.82, 0, 0.3)
     row.Slots = {}
     for i = 1, PER_ROW do
         local b = Kit.ItemButton(row, SLOT)
-        b:SetPoint("LEFT", 4 + (i - 1) * (SLOT + GAP), 0)
+        b:SetPoint("LEFT", 6 + (i - 1) * (SLOT + GAP), 0)
+        b.Empty = b:CreateTexture(nil, "BACKGROUND", nil, 1)
+        b.Empty:SetPoint("TOPLEFT", -1, 1)
+        b.Empty:SetPoint("BOTTOMRIGHT", 1, -1)
+        b.Empty:SetTexture(EMPTY_SLOT)
         b.Sel = b:CreateTexture(nil, "OVERLAY", nil, 2)
         b.Sel:SetPoint("TOPLEFT", -3, 3)
         b.Sel:SetPoint("BOTTOMRIGHT", 3, -3)
@@ -167,81 +175,27 @@ local function BuildGridRow(row)
 end
 
 local function UpdateGridRow(row, d)
-    local head = d.head ~= nil
-    row.Head:SetShown(head); row.HeadRight:SetShown(head); row.Line:SetShown(head)
     if row.Stripe then row.Stripe:Hide() end
-    if head then
-        row.Head:SetText(KIND_NAME[d.head] or d.head)
-        row.HeadRight:SetText(string.format("%d kind%s, %d total", d.kinds, d.kinds == 1 and "" or "s", d.count))
-    end
     for i, b in ipairs(row.Slots) do
-        local e = not head and d.items[i]
-        if e then
+        local s = d[i]
+        if s and s.gear then
+            local g = s.gear
+            b:SetGear(g)
+            b.spec.onClick = function() Select(nil, g.id) end
+            b.Sel:SetShown(P.selGear == g.id)
+            b.Empty:Hide()
+        elseif s and s.entry then
+            local e = s.entry
             b:SetItemKey(e.key, e.count, { { "Sells for", Kit.Coin(SellPrice(e.key)) .. " each", 0.6, 0.6, 0.6, 1, 1, 1 } })
             b.spec.onClick = function() Select(e.key) end
             b.Sel:SetShown(P.sel == e.key)
-            b:Show()
+            b.Empty:Hide()
         else
             b:Clear()
-            b:Hide()
+            b.Sel:Hide()
+            b.Empty:Show()
         end
     end
-end
-
-------------------------------------------------------------------------
--- gear (left bottom)
-------------------------------------------------------------------------
-
-local function BuildGearRow(row)
-    row.Item = Kit.ItemButton(row, ROW_H - 2)
-    row.Item:SetPoint("LEFT", 2, 0)
-    row.Name = Kit.Text(row, "GameFontHighlightSmall")
-    row.Name:SetPoint("LEFT", row.Item, "RIGHT", 6, 0)
-    row.Name:SetWidth(170)
-    row.Slot = Kit.Text(row, "GameFontDisableSmall")
-    row.Slot:SetPoint("LEFT", row.Name, "RIGHT", 4, 0)
-    row.Slot:SetWidth(54)
-    row.Ilvl = Kit.Text(row, "GameFontNormalSmall", "RIGHT")
-    row.Ilvl:SetPoint("LEFT", row.Slot, "RIGHT", 0, 0)
-    row.Ilvl:SetWidth(30)
-    row.Up = Kit.Text(row, "GameFontHighlightSmall")
-    row.Up:SetPoint("LEFT", row.Ilvl, "RIGHT", 10, 0)
-    row.Up:SetWidth(120)
-    row.Sell = Kit.Button(row, "Sell", 50, ROW_H - 2)
-    row.Sell:SetPoint("RIGHT", -2, 0)
-    row.Equip = Kit.Button(row, "Equip", 54, ROW_H - 2)
-    row.Equip:SetPoint("RIGHT", row.Sell, "LEFT", -3, 0)
-end
-
-local function UpdateGearRow(row, g)
-    row.Item:SetGear(g)
-    row.Name:SetText("|c" .. Kit.QualityHex(g.quality or 1) .. (g.name or "?") .. "|r")
-    row.Slot:SetText(SLOT_NAME[g.slot] or g.slot or "")
-    row.Ilvl:SetText(tostring(g.ilvl or 0))
-    local h, gain = BestUpgrade(g)
-    if h then
-        row.Up:SetText(string.format("|cff40ff40+%d|r %s", gain, Kit.HeroName(h)))
-    else
-        row.Up:SetText("|cff808080no upgrade|r")
-    end
-    row.Equip:SetEnabledTip(h ~= nil, h and nil or "Every recruit already wears something as good in this slot.")
-    row.Equip:SetScript("OnClick", function()
-        local best = BestUpgrade(g)
-        if best then Kit.Do("Equip", best.id, g.id) end
-    end)
-    local value = Kit.Call("GearValue", g) or 0
-    row.Sell:SetTip(function(tt) tt:SetText("Sell for " .. Kit.Coin(value), 1, 1, 1) end)
-    if row.Sell.confirmFor ~= g.id then row.Sell:SetText("Sell") end
-    row.Sell:SetScript("OnClick", function(btn)
-        local now = time()
-        if (g.quality or 1) < 4 or (btn.confirmFor == g.id and now <= (btn.confirmUntil or 0)) then
-            btn.confirmFor = nil
-            Kit.Do("SellGear", g.id)
-        else
-            btn.confirmFor, btn.confirmUntil = g.id, now + 3
-            btn:SetText("Sure?")
-        end
-    end)
 end
 
 ------------------------------------------------------------------------
@@ -291,6 +245,29 @@ local function BuildDetail(panel)
     end)
     R.market = Kit.Button(R, "Market", 66, 22, function() UI.Show("MARKET") end, "Open the Market for the price chart and buying.")
 
+    -- gear mode
+    R.equip = Kit.Button(R, "Equip", 120, 22, function()
+        local g = P.selGear and P.gearById and P.gearById[P.selGear]
+        local best = g and BestUpgrade(g)
+        if best then Kit.Do("Equip", best.id, g.id) end
+    end)
+    R.equip:SetPoint("TOPLEFT", R.stats, "BOTTOMLEFT", 0, -10)
+    R.sellGear = Kit.Button(R, "Sell", 70, 22, function(btn)
+        local g = P.selGear and P.gearById and P.gearById[P.selGear]
+        if not g then return end
+        local now = time()
+        if (g.quality or 1) < 4 or (P.confirmGear == g.id and now <= (btn.confirmUntil or 0)) then
+            P.confirmGear = nil
+            Kit.Do("SellGear", g.id)
+        else
+            P.confirmGear, btn.confirmUntil = g.id, now + 3
+            btn:SetText("Sure?")
+        end
+    end)
+    R.sellGear:SetPoint("LEFT", R.equip, "RIGHT", 4, 0)
+    R.heroes = Kit.Button(R, "Heroes", 70, 22, function() UI.Show("HEROES") end, "Open the Heroes tab to equip it on someone else.")
+    R.heroes:SetPoint("LEFT", R.sellGear, "RIGHT", 4, 0)
+
     R.usedHeader = Kit.Header(R, "Used in")
     R.usedHeader:SetPoint("LEFT", 0, 0)
     R.usedHeader:SetPoint("RIGHT", 0, 0)
@@ -317,19 +294,49 @@ local function BuildDetail(panel)
     R.empty:SetWordWrap(true)
 end
 
+local GEAR_WIDGETS = { "equip", "sellGear", "heroes" }
+local ITEM_WIDGETS = { "use", "sell1", "sell10", "sellAll", "market", "usedHeader", "used", "srcHeader", "src" }
+
+local function RefreshGear(R, g)
+    R.header:SetText("Gear")
+    R.item:SetGear(g)
+    R.name:SetText("|c" .. Kit.QualityHex(g.quality or 1) .. (g.name or "?") .. "|r")
+    R.sub:SetText((SLOT_NAME[g.slot] or g.slot or "") .. "  -  " .. TierName(g.tier))
+    local value = Kit.Call("GearValue", g) or 0
+    local best, gain = BestUpgrade(g)
+    local lines = {
+        string.format("|cffffd100Item level|r  %d", g.ilvl or 0),
+        string.format("|cffffd100Sells for|r  %s", Kit.Coin(value)),
+    }
+    if best then
+        lines[#lines + 1] = string.format("|cffffd100Best upgrade|r  %s  |cff40ff40+%d item level|r", Kit.HeroName(best), gain)
+    else
+        lines[#lines + 1] = "|cff9d9d9dEvery recruit already wears something as good in this slot.|r"
+    end
+    R.stats:SetText(table.concat(lines, "\n"))
+    R.equip:SetText(best and ("Equip on " .. (best.name or "?")) or "Equip")
+    R.equip:SetWidth(best and math.min(170, 70 + #(best.name or "") * 6) or 70)
+    R.equip:SetEnabledTip(best ~= nil, "No recruit would be better off with it.")
+    if P.confirmGear ~= g.id or time() > (R.sellGear.confirmUntil or 0) then R.sellGear:SetText("Sell") end
+end
+
 local function RefreshDetail()
     local R = P.detail
-    local it = P.sel and Kit.Item(P.sel)
+    local g = P.selGear and P.gearById and P.gearById[P.selGear]
+    if P.selGear and not g then P.selGear = nil end
+    local it = not g and P.sel and Kit.Item(P.sel)
     local have = P.sel and (Kit.Call("Count", P.sel) or 0) or 0
-    local show = it ~= nil
-    for _, w in ipairs({ R.item, R.name, R.sub, R.stats, R.use, R.sell1, R.sell10, R.sellAll, R.market,
-                         R.usedHeader, R.used, R.srcHeader, R.src }) do w:SetShown(show) end
+    local show = it ~= nil or g ~= nil
+    for _, w in ipairs({ R.item, R.name, R.sub, R.stats }) do w:SetShown(show) end
+    for _, k in ipairs(GEAR_WIDGETS) do R[k]:SetShown(g ~= nil) end
+    for _, k in ipairs(ITEM_WIDGETS) do R[k]:SetShown(it ~= nil) end
     R.empty:SetShown(not show)
     if not show then
         R.header:SetText("Item")
-        R.empty:SetText("Click an item in your bags to see what it is worth, what it is used for and where to get more.")
+        R.empty:SetText("Click a slot in your bags to see what it is worth, what it is used for and where to get more.")
         return
     end
+    if g then return RefreshGear(R, g) end
 
     R.header:SetText(KIND_NAME[it.kind or ""] or "Item")
     R.item:SetItemKey(P.sel, have)
@@ -391,47 +398,20 @@ local function Build(panel)
     P.gridHeader = Kit.Header(panel, "Bags", LEFT_W)
     P.gridHeader:SetPoint("TOPLEFT", 0, 0)
     P.grid = Kit.List(panel, { rowHeight = SLOT + GAP, build = BuildGridRow, update = UpdateGridRow, stripes = false })
-    P.grid:SetPoint("TOPLEFT", 0, -22)
-    P.grid:SetSize(LEFT_W, GRID_H)
-    P.gridEmpty = Kit.Text(panel, "GameFontDisable", "CENTER")
-    P.gridEmpty:SetPoint("CENTER", P.grid, "CENTER", 0, 0)
-    P.gridEmpty:SetText("Your bags are empty. Gathering, quests and the Mine fill them.")
-
-    P.gearHeader = Kit.Header(panel, "Spare gear", LEFT_W)
-    P.gearHeader:SetPoint("TOPLEFT", 0, -(GRID_H + 30))
-    P.gear = Kit.List(panel, { rowHeight = ROW_H, build = BuildGearRow, update = UpdateGearRow })
-    P.gear:SetPoint("TOPLEFT", 0, -(GRID_H + 52))
-    P.gear:SetPoint("BOTTOM", panel, "BOTTOM", 0, 0)
-    P.gear:SetWidth(LEFT_W)
-    P.gearEmpty = Kit.Text(panel, "GameFontDisable", "CENTER")
-    P.gearEmpty:SetPoint("CENTER", P.gear, "CENTER", 0, 0)
-    P.gearEmpty:SetText("No spare gear. Quests, dungeons, raids and the Forge drop it.")
-
+    P.grid:SetPoint("TOPLEFT", 0, -24)
+    P.grid:SetPoint("BOTTOM", panel, "BOTTOM", 0, 0)
+    P.grid:SetWidth(LEFT_W)
     BuildDetail(panel)
 end
 
 local function Refresh()
     if not P.grid then return end
-    local rows, total, worth = BuildGrid()
-    P.grid:SetData(rows)
-    P.gridEmpty:SetShown(#rows == 0)
-    P.gridHeader.right:SetText(string.format("%d items  |cff9d9d9dworth|r %s", total, Kit.Coin(worth, true)))
-    if P.sel and (Kit.Call("Count", P.sel) or 0) == 0 then
-        -- keep showing a used-up item only while it still has somewhere to come from
-        local still = false
-        for _, r in ipairs(rows) do
-            for _, e in ipairs(r.items or {}) do if e.key == P.sel then still = true end end
-        end
-        if not still then P.sel = nil end
-    end
-
-    local bag = Kit.Call("GetGearBag") or {}
-    P.gear:SetData(bag)
-    P.gearEmpty:SetShown(#bag == 0)
-    local value = 0
-    for _, g in ipairs(bag) do value = value + (Kit.Call("GearValue", g) or 0) end
-    P.gearHeader.right:SetText(string.format("%d piece%s  |cff9d9d9dworth|r %s", #bag, #bag == 1 and "" or "s", Kit.Coin(value, true)))
-
+    local slots, total, worth, nGear = BuildSlots()
+    P.gearById = {}
+    for _, s in ipairs(slots) do if s.gear then P.gearById[s.gear.id] = s.gear end end
+    P.grid:SetData(ToRows(slots))
+    P.gridHeader.right:SetText(string.format("%d items, %d gear  |cff9d9d9dworth|r %s", total, nGear, Kit.Coin(worth, true)))
+    if P.sel and (Kit.Call("Count", P.sel) or 0) == 0 then P.sel = nil end
     RefreshDetail()
 end
 

@@ -6,7 +6,7 @@ local Game, U = ns.Game, ns.Util
 ----------------------------------------------------------------------------------------------------
 
 -- ===== tuning =====
-local OFFLINE_CAP = 12 * 3600         -- repeat loops keep restarting for at most this long after you leave
+local OFFLINE_CAP = 24 * 3600         -- repeat loops keep restarting for at most this long after you leave
 local WELCOME_MIN_AWAY = 300          -- Welcome() returns nil for shorter absences
 local FAIL_XP = 0.40                  -- a failed mission still teaches something ...
 local FAIL_GOLD = 0.15                -- ... and pays a little
@@ -79,10 +79,10 @@ function Game:Start(offerKey, heroIds, repeatIt)
     if #heroes ~= #(heroIds or {}) then return nil, "Unknown recruit." end
     local p = self:PreviewOffer(o, heroes, now)
     if not p.ok then return nil, p.reason end
-    if o.kind == "QUEST" then o.taken = true end
     local snapshot = U.Copy(o)
     snapshot.taken = nil
     local task = self:StartOffer(snapshot, heroes, now, repeatIt, p)
+    if o.kind == "QUEST" then self:ReplaceQuest(o) end
     self:Changed("tasks")
     self:Changed("heroes")
     return task

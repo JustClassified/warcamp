@@ -19,7 +19,7 @@ Type **/warcamp** or click the minimap button to begin.
 3. **Come back** when it suits you, collect the loot and send them out again.
 4. **Grow**: upgrade buildings, craft better gear, unlock the next expansion and chase mounts and pets.
 
-Tasks can **repeat**, and repeating tasks keep going for up to **12 hours while you are offline**. Log in to a welcome report of everything your camp did while you were away.
+Tasks can **repeat**, and repeating tasks keep going for up to **24 hours while you are offline**. Log in to a welcome report of everything your camp did while you were away.
 
 ---
 

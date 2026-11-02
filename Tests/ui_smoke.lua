@@ -654,12 +654,22 @@ step("bags tab: grid, select, use, sell, gear", function()
     assert(Game:Count("ORE_T1") == before - 1, "sold one")
     R.sellAll:Fire("OnClick", "LeftButton"); R.sellAll:Fire("OnClick", "LeftButton"); flush()
     assert(Game:Count("ORE_T1") == 0, "sold all")
-    P.gear:ForEachRow(function(row)
-        row.Equip:Fire("OnClick", "LeftButton"); flush()
-    end)
-    P.gear:ForEachRow(function(row)
-        row.Sell:Fire("OnClick", "LeftButton"); row.Sell:Fire("OnClick", "LeftButton"); flush()
-    end)
+    -- gear slots: select each, equip on the best recruit or sell it
+    local gearIds = {}
+    for _, g in ipairs(Game:GetGearBag() or {}) do gearIds[#gearIds + 1] = g.id end
+    for _, id in ipairs(gearIds) do
+        P.sel, P.selGear = nil, id; flush()
+        if R.equip:IsEnabled() then R.equip:Fire("OnClick", "LeftButton") else
+            R.sellGear:Fire("OnClick", "LeftButton"); R.sellGear:Fire("OnClick", "LeftButton") end
+        flush()
+    end
+    for _, id in ipairs(gearIds) do
+        assert(not (Game.db.bag or {})[id], "gear slot equipped or sold")
+    end
+    print(string.format("     bags: %d gear slots handled", #gearIds))
+    local empties = 0
+    P.grid:ForEachRow(function(row) for _, b in ipairs(row.Slots) do if not b.spec then empties = empties + 1 end end end)
+    assert(empties > 0, "bag padded with empty slots")
     R.market:Fire("OnClick", "LeftButton"); flush()
     UI.Show("BAGS"); flush()
 end)

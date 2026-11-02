@@ -740,7 +740,7 @@ for _, t in ipairs(Game:GetTasks()) do
     end
 end
 local cap = Game:OfflineCap()
-check(latestStart < leftAt + cap, string.format("no task restarted after the 12 h cap (latest start %.1f h after logout)", (latestStart - leftAt) / 3600))
+check(latestStart < leftAt + cap, string.format("no task restarted after the offline cap (latest start %.1f h after logout)", (latestStart - leftAt) / 3600))
 check(Game:ReadyCount(NOW) > 0, "tasks wait as READY after the cap")
 local loops = (WarcampDB.stats.TASKS or 0) - tasksBefore
 print(string.format("   %d repeating tasks at logout; %d auto-collected while away; latest restart %.1f h after logout; %d ready on login",

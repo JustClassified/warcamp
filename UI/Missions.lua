@@ -636,7 +636,7 @@ local function BuildEncounter(parent)
         E.notes[i] = fs
     end
     E.repeatBox = Check(c, "Repeat", function(on) P.repeatOn = on end,
-        "Start again by itself when collected (also while you are away, up to 12 h)")
+        "Start again by itself when collected (also while you are away, up to 24 h)")
     E.repeatBox:SetPoint("BOTTOMLEFT", PARTY_X - 2, 6)
     E.start = Kit.Button(c, "Start", 110, 24, StartSelected)
     E.start:SetPoint("BOTTOMRIGHT", -8, 8)

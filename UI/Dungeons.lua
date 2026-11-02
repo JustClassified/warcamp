@@ -678,9 +678,7 @@ local function BuildChaseRow(parent, kind)
     local c = CreateFrame("Button", nil, parent)
     c:SetSize(212, 22)
     c.kind = kind
-    local hl = c:CreateTexture(nil, "HIGHLIGHT")
-    hl:SetAllPoints()
-    if not Kit.Atlas(hl, "auctionhouse-ui-row-highlight") then hl:SetColorTexture(1, 1, 1, 0.08) end
+    Kit.RowHighlight(c)
     c.Icon = c:CreateTexture(nil, "ARTWORK")
     c.Icon:SetSize(20, 20)
     c.Icon:SetPoint("LEFT", 1, 0)
@@ -890,7 +888,7 @@ local function Build(panel)
         P.notes[i] = fs
     end
     P.repeatBox = Check(c, "Repeat", function(on) P.repeatOn = on end,
-        "Run it again by itself when collected (also while you are away, up to 12 h)")
+        "Run it again by itself when collected (also while you are away, up to 24 h)")
     P.repeatBox:SetPoint("BOTTOMLEFT", SIDE_X - 2, 8)
     P.start = Kit.Button(c, "Start", 110, 24, StartSelected)
     P.start:SetPoint("BOTTOMRIGHT", -8, 8)

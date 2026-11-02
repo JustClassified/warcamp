@@ -123,7 +123,7 @@ local function NavButton(parent, text, onClick, secondary)
     local base = secondary and "auctionhouse-nav-button-secondary" or "auctionhouse-nav-button"
     Kit.Atlas(b.Normal, base, { 0.15, 0.12, 0.08, 0.9 })
     Kit.Atlas(b.Sel, base .. "-select", { 1, 0.82, 0, 0.25 })
-    Kit.Atlas(hl, base .. "-highlight", { 1, 1, 1, 0.08 })
+    if Kit.Atlas(hl, base .. "-highlight", { 1, 1, 1, 0.08 }) then hl:SetBlendMode("ADD") end
     b.Text = Kit.Text(b, "GameFontNormalSmall")
     b.Text:SetPoint("LEFT", secondary and 16 or 10, 0)
     b.Text:SetPoint("RIGHT", -6, 0)
