@@ -9,3 +9,4 @@ ignore:
   - .pkgmeta
   - "*.DS_Store"
   - imgs
+  - DESCRIPTION.md
